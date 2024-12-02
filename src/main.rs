@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
@@ -23,16 +24,22 @@ fn main() -> io::Result<()> {
         }
     }
 
-    left_vec.sort();
-    right_vec.sort();
-
-    let mut answer: i32 = 0;
-
-    for i in 0..left_vec.len() {
-        let count = (left_vec[i] - right_vec[i]).abs();
-
-        answer += count;
+    // Create a hashmap to keep references
+    let mut right_count = HashMap::new();
+    for &num in &right_vec {
+        *right_count.entry(num).or_insert(0) += 1;
     }
+
+    let answer: i32 = left_vec
+        .iter()
+        .map(|&num| {
+            if let Some(&count) = right_count.get(&num) {
+                count * num
+            } else {
+                0
+            }
+        })
+        .sum();
 
     println!("the answer is {}", answer);
 
