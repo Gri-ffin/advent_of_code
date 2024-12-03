@@ -11,6 +11,10 @@ fn main() -> io::Result<()> {
 
     // Define the regex to max mul(x, y) where x and y are numbers
     let re = Regex::new(r"mul\((\d{1,3}),(\d{1,3})\)").unwrap();
+    let do_re = Regex::new(r"do\(\)").unwrap();
+    let dont_re = Regex::new(r"dont\(\)").unwrap();
+
+    let 
 
     let mut total = 0;
 
