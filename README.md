@@ -4,13 +4,12 @@ Welcome to my **Rust** Advent of Code 2024 repository! This is where I will be d
 
 ## Progress
 
-I have currently solved up to Day 3, earning a total of 6 stars. Each day consists of two parts, and I have successfully completed both parts for each of the first three days.
-
 | Day | Part 1 | Part 2 |
 | --- | ------ | ------ |
 | 1   | ⭐️    | ⭐️    |
 | 2   | ⭐️    | ⭐️    |
 | 3   | ⭐️    | ⭐️    |
+| 4   | ⭐️    |        |
 
 ## About Advent of Code
 

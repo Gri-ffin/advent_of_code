@@ -14,8 +14,6 @@ fn main() -> io::Result<()> {
     let do_re = Regex::new(r"do\(\)").unwrap();
     let dont_re = Regex::new(r"dont\(\)").unwrap();
 
-    let 
-
     let mut total = 0;
 
     for line in reader.lines() {
