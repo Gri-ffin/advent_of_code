@@ -40,15 +40,15 @@ fn track_guard_path(grid: &Vec<Vec<char>>) -> usize {
     loop {
         let next_pos = current_dir.move_step(current_pos);
 
+        // if the guard left the map, we found our solution
         if is_out_of_bound(grid, next_pos) {
-            // Guard has left the grid, break the loop
             break;
         }
 
+        // if the path ahead is blocked, the guard would turn right, and we try again
         if is_blocked(grid, next_pos) {
-            // Turn right if the next position is blocked
             current_dir = current_dir.turn_right();
-            continue; // Retry with the new direction
+            continue;
         }
 
         // Move to the next position
