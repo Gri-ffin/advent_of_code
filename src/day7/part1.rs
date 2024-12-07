@@ -17,7 +17,7 @@ fn parse_file(file: &str) -> Vec<(usize, Vec<usize>)> {
         .collect()
 }
 
-// Takes a Vector of operations ex: [+, *] or [*, *] ... and a Vector of numbers ex: [1, 2, 3]
+// Takes a Vector of operations ex: [+, *] or [*, *] ... and a Vector of numbers ex: [1, 2, 3] and returns the result
 fn evaluate_expression(numbers: &[usize], operators: &[char]) -> usize {
     let mut result = numbers[0];
     // Iterate over the operators and apply the operation to the result based on the operation
