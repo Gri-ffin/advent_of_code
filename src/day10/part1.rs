@@ -61,7 +61,7 @@ fn calculate_trailhead_score(map: &Vec<Vec<u32>>, start_r: usize, start_c: usize
             continue;
         }
 
-        // check if the cell is at the same height as the trailhead
+        // check if the cell is at the same number as the trailhead
         if map[r][c] != current_height {
             continue;
         }
