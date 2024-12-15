@@ -1,80 +1,78 @@
-use std::{
-    fs::File,
-    io::{self, BufRead},
-    path::Path,
-};
+use std::collections::HashMap;
+use std::fs;
 
 fn main() {
-    let input_path = "robots.txt";
-    let robots = read_input(input_path).unwrap();
+    // Read input from file
+    let input = fs::read_to_string("input.txt").expect("Failed to read input file");
+    let parts: Vec<&str> = input.split("\n\n").collect();
 
-    let width = 101;
-    let height = 103;
-    let steps = 100;
-
-    let final_positions = simulate_robots(&robots, width, height, steps);
-
-    let safety_factor = calculate_safety_factor(&final_positions, width, height);
-
-    println!("Safety factor: {}", safety_factor);
-}
-
-fn read_input<P: AsRef<Path>>(filename: P) -> io::Result<Vec<((i32, i32), (i32, i32))>> {
-    let file = File::open(filename)?;
-    let reader = io::BufReader::new(file);
-
-    let mut robots = Vec::new();
-    for line in reader.lines() {
-        let line = line?;
-        if let Some((p, v)) = line.split_once(" v=") {
-            let p = parse_coords(p.strip_prefix("p=").unwrap());
-            let v = parse_coords(v);
-            robots.push((p, v));
-        }
+    if parts.len() != 2 {
+        panic!("Invalid input format");
     }
-    Ok(robots)
-}
 
-fn parse_coords(coords: &str) -> (i32, i32) {
-    let parts: Vec<i32> = coords.split(",").map(|s| s.parse().unwrap()).collect();
-    (parts[0], parts[1])
-}
+    let map_lines: Vec<&str> = parts[0].lines().collect();
+    let movements: String = parts[1].lines().collect();
 
-fn simulate_robots(
-    robots: &[((i32, i32), (i32, i32))],
-    width: i32,
-    height: i32,
-    steps: i32,
-) -> Vec<(i32, i32)> {
-    robots
+    let mut warehouse: Vec<Vec<char>> = map_lines
         .iter()
-        .map(|&((x, y), (vx, vy))| {
-            let new_x = (x + steps * vx).rem_euclid(width);
-            let new_y = (y + steps * vy).rem_euclid(height);
-            (new_x, new_y)
-        })
-        .collect()
-}
+        .map(|&line| line.chars().collect())
+        .collect();
 
-fn calculate_safety_factor(positions: &[(i32, i32)], width: i32, height: i32) -> i32 {
-    let mid_x = width / 2;
-    let mid_y = height / 2;
+    let mut robot_position = (0, 0);
 
-    let mut quadrants = [0; 4];
-
-    for &(x, y) in positions {
-        if x == mid_x || y == mid_y {
-            continue;
-        } else if x > mid_x && y < mid_y {
-            quadrants[0] += 1;
-        } else if x < mid_x && y < mid_y {
-            quadrants[1] += 1;
-        } else if x < mid_x && y > mid_y {
-            quadrants[2] += 1;
-        } else if x > mid_x && y > mid_y {
-            quadrants[3] += 1;
+    // Locate the robot's initial position
+    for (i, row) in warehouse.iter().enumerate() {
+        for (j, &cell) in row.iter().enumerate() {
+            if cell == '@' {
+                robot_position = (i, j);
+                break;
+            }
         }
     }
 
-    quadrants.iter().product()
+    // Directions map for robot movement
+    let directions: HashMap<char, (isize, isize)> =
+        HashMap::from([('^', (-1, 0)), ('v', (1, 0)), ('<', (0, -1)), ('>', (0, 1))]);
+
+    for movement in movements.chars() {
+        if let Some(&(di, dj)) = directions.get(&movement) {
+            let (next_i, next_j) = (
+                (robot_position.0 as isize + di) as usize,
+                (robot_position.1 as isize + dj) as usize,
+            );
+
+            // Check if robot can move
+            if warehouse[next_i][next_j] == '.' {
+                warehouse[robot_position.0][robot_position.1] = '.';
+                robot_position = (next_i, next_j);
+                warehouse[robot_position.0][robot_position.1] = '@';
+            } else if warehouse[next_i][next_j] == 'O' {
+                // Try to push the box
+                let (box_next_i, box_next_j) = (
+                    (next_i as isize + di) as usize,
+                    (next_j as isize + dj) as usize,
+                );
+
+                if warehouse[box_next_i][box_next_j] == '.' {
+                    warehouse[robot_position.0][robot_position.1] = '.';
+                    warehouse[next_i][next_j] = '@';
+                    warehouse[box_next_i][box_next_j] = 'O';
+                    robot_position = (next_i, next_j);
+                }
+            }
+        }
+    }
+
+    // Calculate the sum of GPS coordinates of all boxes
+    let mut gps_sum = 0;
+
+    for (i, row) in warehouse.iter().enumerate() {
+        for (j, &cell) in row.iter().enumerate() {
+            if cell == 'O' {
+                gps_sum += 100 * i + j;
+            }
+        }
+    }
+
+    println!("Sum of GPS coordinates: {}", gps_sum);
 }
