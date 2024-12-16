@@ -1,78 +1,101 @@
-use std::collections::HashMap;
-use std::fs;
+use std::{
+    cmp::Reverse,
+    collections::{BinaryHeap, HashSet},
+    fs,
+};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+struct State {
+    position: (usize, usize),
+    direction: usize, // // 0: East, 1: South, 2: West, 3: North
+    score: usize,
+}
+
+impl Ord for State {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.score.cmp(&other.score)
+    }
+}
+
+impl PartialOrd for State {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl State {
+    fn new(position: (usize, usize), direction: usize, score: usize) -> Self {
+        Self {
+            position,
+            direction,
+            score,
+        }
+    }
+}
 
 fn main() {
-    // Read input from file
-    let input = fs::read_to_string("input.txt").expect("Failed to read input file");
-    let parts: Vec<&str> = input.split("\n\n").collect();
+    let input = fs::read_to_string("maze.txt").unwrap();
+    let maze: Vec<Vec<char>> = input.lines().map(|line| line.chars().collect()).collect();
 
-    if parts.len() != 2 {
-        panic!("Invalid input format");
-    }
+    let mut start = (0, 0);
+    let mut end = (0, 0);
 
-    let map_lines: Vec<&str> = parts[0].lines().collect();
-    let movements: String = parts[1].lines().collect();
-
-    let mut warehouse: Vec<Vec<char>> = map_lines
-        .iter()
-        .map(|&line| line.chars().collect())
-        .collect();
-
-    let mut robot_position = (0, 0);
-
-    // Locate the robot's initial position
-    for (i, row) in warehouse.iter().enumerate() {
-        for (j, &cell) in row.iter().enumerate() {
-            if cell == '@' {
-                robot_position = (i, j);
-                break;
+    // Find the positions of the end and start
+    for (y, row) in maze.iter().enumerate() {
+        for (x, &tile) in row.iter().enumerate() {
+            if tile == 'S' {
+                start = (x, y);
+            } else if tile == 'E' {
+                end = (x, y);
             }
         }
     }
 
-    // Directions map for robot movement
-    let directions: HashMap<char, (isize, isize)> =
-        HashMap::from([('^', (-1, 0)), ('v', (1, 0)), ('<', (0, -1)), ('>', (0, 1))]);
+    // Directions = East, South, West, North
+    let directions = [(1, 0), (0, 1), (-1, 0), (0, -1)];
 
-    for movement in movements.chars() {
-        if let Some(&(di, dj)) = directions.get(&movement) {
-            let (next_i, next_j) = (
-                (robot_position.0 as isize + di) as usize,
-                (robot_position.1 as isize + dj) as usize,
-            );
+    // Implement Priority queue for A* search
+    let mut heap = BinaryHeap::new();
+    heap.push(Reverse((0, State::new(start, 0, 0))));
 
-            // Check if robot can move
-            if warehouse[next_i][next_j] == '.' {
-                warehouse[robot_position.0][robot_position.1] = '.';
-                robot_position = (next_i, next_j);
-                warehouse[robot_position.0][robot_position.1] = '@';
-            } else if warehouse[next_i][next_j] == 'O' {
-                // Try to push the box
-                let (box_next_i, box_next_j) = (
-                    (next_i as isize + di) as usize,
-                    (next_j as isize + dj) as usize,
-                );
+    // Set to track visited states
+    let mut visited = HashSet::new();
 
-                if warehouse[box_next_i][box_next_j] == '.' {
-                    warehouse[robot_position.0][robot_position.1] = '.';
-                    warehouse[next_i][next_j] = '@';
-                    warehouse[box_next_i][box_next_j] = 'O';
-                    robot_position = (next_i, next_j);
-                }
-            }
+    while let Some(Reverse((current_score, state))) = heap.pop() {
+        // If we reach the end, print the score and break
+        if state.position == end {
+            println!("Score: {}", current_score);
+            return;
+        }
+
+        // Skip if the state has been visited with a lower score
+        if !visited.insert((state.position, state.direction)) {
+            continue;
+        }
+
+        // Try moving forward first
+        let (dx, dy) = directions[state.direction];
+        let new_position = (
+            (state.position.0 as isize + dx) as usize,
+            (state.position.1 as isize + dy) as usize,
+        );
+
+        if maze[new_position.1][new_position.0] != '#' {
+            heap.push(Reverse((
+                current_score + 1,
+                State::new(new_position, state.direction, state.score + 1),
+            )));
+        }
+
+        // Try rotating clockwise and counter closewise
+        for &rotation in &[-1, 1] {
+            let new_direction = (state.direction as isize + rotation).rem_euclid(4) as usize;
+            heap.push(Reverse((
+                current_score + 1000,
+                State::new(state.position, new_direction, state.score + 1000),
+            )));
         }
     }
 
-    // Calculate the sum of GPS coordinates of all boxes
-    let mut gps_sum = 0;
-
-    for (i, row) in warehouse.iter().enumerate() {
-        for (j, &cell) in row.iter().enumerate() {
-            if cell == 'O' {
-                gps_sum += 100 * i + j;
-            }
-        }
-    }
-
-    println!("Sum of GPS coordinates: {}", gps_sum);
+    println!("No solution found");
 }
