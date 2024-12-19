@@ -16,7 +16,7 @@ fn main() {
 
     let towel_designs: Vec<&str> = towel_designs.lines().map(str::trim).collect();
 
-    // go through each towel design and check if it can be formed by the unlimited towels
+    // go through each towel design and check all the ways it can be formed by the unlimited towels
     let mut memo = HashMap::new();
     let total_ways: usize = towel_designs
         .iter()
@@ -46,6 +46,7 @@ fn can_form_design(
     for pattern in towel_patterns {
         if design.starts_with(pattern) {
             let remaining = &design[pattern.len()..];
+            // Recursively check if the remaining design can be formed by the unlimited towels
             total += can_form_design(remaining, towel_patterns, memo);
         }
     }
