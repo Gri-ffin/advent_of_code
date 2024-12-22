@@ -1,56 +1,43 @@
-use std::{collections::HashMap, fs};
+use std::fs::File;
+use std::io::{self, BufRead};
 
-fn main() {
-    let input = fs::read_to_string("towels.txt").unwrap();
+fn next_secret(mut secret: u32) -> u32 {
+    // Step 1: Multiply by xor 64, mix, prune
+    secret ^= secret.wrapping_mul(64);
+    secret %= 16_777_216;
 
-    // Split the input into unlimited towels and towel patterns
-    let mut sections = input.split("\n\n");
-    let unlimited_towels = sections.next().unwrap();
-    let towel_designs = sections.next().unwrap();
+    // Step 2: Divide by xor 32 (integer division), mix, prune
+    secret ^= secret / 32;
+    secret %= 16_777_216;
 
-    // Parse the unlimited towels into a vec of String and the towel designs into a vec of &str
-    let unlimimted_towels: Vec<String> = unlimited_towels
-        .split(',')
-        .map(|towel| towel.trim().to_string())
-        .collect();
+    // Step 3: Multiply by xor 2048, mix, prune
+    secret ^= secret.wrapping_mul(2048);
+    secret %= 16_777_216;
 
-    let towel_designs: Vec<&str> = towel_designs.lines().map(str::trim).collect();
-
-    // go through each towel design and check if it can be formed by the unlimited towels
-    let mut memo = HashMap::new();
-    let total_ways: usize = towel_designs
-        .iter()
-        .map(|&design| can_form_design(design, &unlimimted_towels, &mut memo))
-        .sum();
-
-    println!("{}", total_ways);
+    secret
 }
 
-fn can_form_design(
-    design: &str,
-    towel_patterns: &[String],
-    memo: &mut HashMap<String, usize>,
-) -> usize {
-    // Check if we have already computed the result for this design
-    if let Some(&result) = memo.get(design) {
-        return result;
+fn compute_2000th_secret(initial_secret: u32) -> u32 {
+    let mut secret = initial_secret;
+    for _ in 0..2000 {
+        secret = next_secret(secret);
     }
+    secret
+}
 
-    // If the design is empty it can be formed trivially
-    if design.is_empty() {
-        return 1;
-    }
+fn main() {
+    let file = File::open("input.txt").unwrap();
+    let reader = io::BufReader::new(file);
 
-    // Try to match each towel pattern with the design
-    let mut total = 0;
-    for pattern in towel_patterns {
-        if design.starts_with(pattern) {
-            let remaining = &design[pattern.len()..];
-            total += can_form_design(remaining, towel_patterns, memo);
+    let mut sum: u64 = 0;
+
+    for line in reader.lines() {
+        let line = line.unwrap();
+        if let Ok(initial_secret) = line.trim().parse::<u32>() {
+            // Compute
+            sum += compute_2000th_secret(initial_secret) as u64;
         }
     }
 
-    // If no towel pattern can be matched with the design
-    memo.insert(design.to_string(), total);
-    return total;
+    println!("Sum of the 2000th secret numbers: {}", sum);
 }
