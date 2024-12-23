@@ -28,6 +28,7 @@ Welcome to my **Rust** Advent of Code 2024 repository! This is where I will be d
 | 20  |        |        |
 | 21  |        |        |
 | 22  | ⭐️    |        |
+| 23  | ⭐️    |        |
 
 ## About Advent of Code
 
